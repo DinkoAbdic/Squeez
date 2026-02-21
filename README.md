@@ -32,14 +32,21 @@ Squeez is a blazing-fast desktop application designed to compress, resize, and c
 - **📦 Bulk Processing:** Drag and drop hundreds of images and process them in seconds.
 - **🎨 Format Conversion:** Supports modern formats including WebP, AVIF, JPEG, and PNG.
 - **⚙️ Advanced Cropping & Resizing:** Perfect for generating standardized social media assets.
-- **💻 Cross-Platform:** Available for both Windows and macOS natively.
+- **💻 Cross-Platform:** Available for Windows, macOS, and Linux natively.
 
-## 📥 Download & Installation
+## 📥 Download
 
-You can download the latest compiled version of Squeez for your operating system from the [Releases page](https://github.com/DinkoAbdic/Squeez/releases).
+| Platform | Download | Notes |
+|----------|----------|-------|
+| **Windows** (x64) | [Squeez_0.1.0_x64-setup.exe](https://github.com/DinkoAbdic/Squeez/releases/download/v0.1.0/Squeez_0.1.0_x64-setup.exe) | NSIS installer |
+| **macOS** (Apple Silicon) | [Squeez_0.1.0_aarch64.dmg](https://github.com/DinkoAbdic/Squeez/releases/download/v0.1.0/Squeez_0.1.0_aarch64.dmg) | M1/M2/M3/M4 |
+| **macOS** (Intel) | [Squeez_0.1.0_x64.dmg](https://github.com/DinkoAbdic/Squeez/releases/download/v0.1.0/Squeez_0.1.0_x64.dmg) | x86_64 |
+| **Linux** (Debian/Ubuntu) | [Squeez_0.1.0_amd64.deb](https://github.com/DinkoAbdic/Squeez/releases/download/v0.1.0/Squeez_0.1.0_amd64.deb) | `sudo dpkg -i` |
+| **Linux** (Universal) | [Squeez_0.1.0_amd64.AppImage](https://github.com/DinkoAbdic/Squeez/releases/download/v0.1.0/Squeez_0.1.0_amd64.AppImage) | Portable, no install |
 
-- **Windows:** Download the `.exe` installer.
-- **macOS:** Download the `.dmg` or `.app` file. *(Note: macOS binaries are generated via GitHub Actions)*
+Or browse all assets on the [Releases page](https://github.com/DinkoAbdic/Squeez/releases).
+
+Squeez includes built-in auto-updates — once installed, you'll be notified when a new version is available.
 
 ## 🛠️ Technology Stack
 
