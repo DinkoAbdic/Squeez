@@ -52,7 +52,7 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev \
+          sudo apt-get install -y libwebkit2gtk-4.1-dev \
               build-essential \
               curl \
               wget \
@@ -62,10 +62,6 @@ jobs:
               libayatana-appindicator3-dev \
               librsvg2-dev
 
-      - name: Generate Desktop Assets (NSIS Branding)
-        if: matrix.os == 'windows-latest'
-        run: node scripts/generate-assets.js
-        
       - name: Build and Package Tauri App
         uses: tauri-apps/tauri-action@v0
         env:
