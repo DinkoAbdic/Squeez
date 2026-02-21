@@ -1,0 +1,38 @@
+[package]
+name = "image-optimizer"
+version = "0.1.0"
+description = "A bulk image optimizer desktop app"
+authors = ["Indigo"]
+edition = "2021"
+
+[lib]
+name = "image_optimizer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+image = { version = "0.25", features = ["jpeg", "png", "gif", "bmp", "tiff", "webp"] }
+webp = "0.3"
+ravif = { version = "0.11", default-features = false }
+rgb = { version = "0.8", features = ["bytemuck"] }
+bytemuck = "1"
+rayon = "1.10"
+base64 = "0.22"
+uuid = { version = "1", features = ["v4"] }
+tokio = { version = "1", features = ["full"] }
+kamadak-exif = "0.6"
+
+# Optimize dependencies even in dev builds — critical for image processing perf.
+# Your own code stays unoptimized (fast compile + debuggable),
+# but image/webp/ravif/rayon run at near-release speed.
+[profile.dev.package."*"]
+opt-level = 3
