@@ -19,7 +19,7 @@ jobs:
           - os: macos-latest
             args: '--target aarch64-apple-darwin'
             target: aarch64-apple-darwin
-          - os: macos-latest
+          - os: macos-13
             args: '--target x86_64-apple-darwin'
             target: x86_64-apple-darwin
           - os: windows-latest
@@ -45,7 +45,7 @@ jobs:
         uses: dsherret/rust-toolchain-file@v1
 
       - name: Install macOS specific targets
-        if: matrix.os == 'macos-latest'
+        if: startsWith(matrix.os, 'macos')
         run: rustup target add ${{ matrix.target }}
 
       - name: Install Linux AppImage dependencies
