@@ -38,10 +38,10 @@ Squeez is a blazing-fast desktop application designed to compress, resize, and c
 
 | Platform | Download | Notes |
 |----------|----------|-------|
-| **Windows** (x64) | [Squeez_0.1.1_x64-setup.exe](https://github.com/DinkoAbdic/Squeez/releases/download/v0.1.1/Squeez_0.1.1_x64-setup.exe) | NSIS installer |
-| **macOS** (Universal) | [Squeez_0.1.1_universal.dmg](https://github.com/DinkoAbdic/Squeez/releases/download/v0.1.1/Squeez_0.1.1_universal.dmg) | Intel & Apple Silicon |
-| **Linux** (Debian/Ubuntu) | [Squeez_0.1.1_amd64.deb](https://github.com/DinkoAbdic/Squeez/releases/download/v0.1.1/Squeez_0.1.1_amd64.deb) | `sudo dpkg -i` |
-| **Linux** (Universal) | [Squeez_0.1.1_amd64.AppImage](https://github.com/DinkoAbdic/Squeez/releases/download/v0.1.1/Squeez_0.1.1_amd64.AppImage) | Portable, no install |
+| **Windows** (x64) | [Squeez_0.2.0_x64-setup.exe](https://github.com/DinkoAbdic/Squeez/releases/download/v0.2.0/Squeez_0.2.0_x64-setup.exe) | NSIS installer |
+| **macOS** (Universal) | [Squeez_0.2.0_universal.dmg](https://github.com/DinkoAbdic/Squeez/releases/download/v0.2.0/Squeez_0.2.0_universal.dmg) | Intel & Apple Silicon |
+| **Linux** (Debian/Ubuntu) | [Squeez_0.2.0_amd64.deb](https://github.com/DinkoAbdic/Squeez/releases/download/v0.2.0/Squeez_0.2.0_amd64.deb) | `sudo dpkg -i` |
+| **Linux** (Universal) | [Squeez_0.2.0_amd64.AppImage](https://github.com/DinkoAbdic/Squeez/releases/download/v0.2.0/Squeez_0.2.0_amd64.AppImage) | Portable, no install |
 
 Or browse all assets on the [Releases page](https://github.com/DinkoAbdic/Squeez/releases).
 
