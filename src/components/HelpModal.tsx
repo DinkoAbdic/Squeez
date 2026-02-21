@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Icons } from './Icons';
 import { checkForUpdates, UpdateInfo } from '../updater';
 
-const APP_VERSION = '0.1.0';
+const APP_VERSION = '0.1.1';
 
 interface HelpModalProps {
     onClose: () => void;
