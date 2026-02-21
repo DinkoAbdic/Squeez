@@ -454,7 +454,8 @@ export function SettingsPanel({
                     <div className="info-tooltip">
                         <Icons.Info />
                         <div className="tooltip-content">
-                            <strong>Strip Metadata:</strong> Removes EXIF data (camera info, GPS, etc.) to save extra space and protect privacy. Recommended for web delivery.
+                            <strong>Strip Metadata:</strong> Removes EXIF data (camera info, GPS, etc.) to save extra space and protect privacy. Recommended for web delivery.<br /><br />
+                            <strong>Convert to sRGB:</strong> Converts the image to the sRGB color space — the universal standard for screens and the web. Prevents colors from looking washed out or shifted when uploading to social media (Instagram, X, etc.) if your photos were shot or edited in Adobe RGB or another wide-gamut color space.
                         </div>
                     </div>
                 </div>
@@ -465,6 +466,18 @@ export function SettingsPanel({
                             type="checkbox"
                             checked={settings.strip_metadata}
                             onChange={e => onUpdateSetting('strip_metadata', e.target.checked)}
+                        />
+                        <div className="toggle-track" />
+                        <div className="toggle-thumb" />
+                    </label>
+                </div>
+                <div className="setting-row">
+                    <span className="setting-label">Convert to sRGB</span>
+                    <label className="toggle">
+                        <input
+                            type="checkbox"
+                            checked={settings.convert_to_srgb}
+                            onChange={e => onUpdateSetting('convert_to_srgb', e.target.checked)}
                         />
                         <div className="toggle-track" />
                         <div className="toggle-thumb" />

@@ -1,6 +1,6 @@
 [package]
 name = "image-optimizer"
-version = "0.1.1"
+version = "0.2.0"
 description = "A bulk image optimizer desktop app"
 authors = ["Indigo"]
 edition = "2021"
@@ -27,9 +27,14 @@ rgb = { version = "0.8", features = ["bytemuck"] }
 bytemuck = "1"
 rayon = "1.10"
 base64 = "0.22"
+lcms2 = "6"
+flate2 = "1"
 uuid = { version = "1", features = ["v4"] }
 tokio = { version = "1", features = ["full"] }
 kamadak-exif = "0.6"
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
 
 # Optimize dependencies even in dev builds — critical for image processing perf.
 # Your own code stays unoptimized (fast compile + debuggable),

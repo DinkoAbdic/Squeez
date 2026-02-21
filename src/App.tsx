@@ -27,6 +27,7 @@ import { ImportModal } from './components/ImportModal';
 import { SummaryModal } from './components/SummaryModal';
 import { HelpModal } from './components/HelpModal';
 import { UpdateBanner, UpdateStatus } from './components/UpdateBanner';
+import { ShellProcessWindow } from './components/ShellProcessWindow';
 import { checkForUpdates, downloadAndInstall, UpdateInfo } from './updater';
 
 /** Convert a base64 data URL to a blob URL for lower memory usage */
@@ -49,7 +50,8 @@ const DEFAULT_SETTINGS: ProcessingSettings = {
   resize_height: null,
   maintain_aspect_ratio: true,
   crop_preset: null,
-  strip_metadata: false,
+  strip_metadata: true,
+  convert_to_srgb: true,
   crop_offset_x: 0,
   crop_offset_y: 0,
   crop_scale: 1,
@@ -57,6 +59,16 @@ const DEFAULT_SETTINGS: ProcessingSettings = {
 };
 
 function App() {
+  // ─── Shell mode ─────────────────────────────────────────────────────────
+  // When launched via right-click "Squeez this image", render the compact
+  // processing window instead of the full app UI.
+  // NOTE: hooks must all be declared before any conditional return, so the
+  // actual branch lives just before the main render return below.
+  const [shellPath, setShellPath] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    invoke<string | null>('get_shell_path').then(p => setShellPath(p ?? null));
+  }, []);
+
   // ─── State ─────────────────────────────────────────────────────────────
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -1152,6 +1164,9 @@ function App() {
   };
 
   // ─── Render ────────────────────────────────────────────────────────────
+  // Shell-mode branch — all hooks above have already been called so this is safe.
+  if (shellPath === undefined) return null;
+  if (shellPath !== null) return <ShellProcessWindow path={shellPath} />;
 
   return (
     <div className="app" onDragOver={handleDragOver}>

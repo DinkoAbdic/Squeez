@@ -194,6 +194,24 @@ body,
 }
 
 /* ======================== */
+/* SHELL PROCESS WINDOW     */
+/* ======================== */
+
+.shell-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-elevated);
+  border-top-color: var(--brand-primary);
+  animation: shell-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes shell-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ======================== */
 /* TOOLBAR                  */
 /* ======================== */
 

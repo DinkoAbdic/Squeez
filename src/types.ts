@@ -34,6 +34,7 @@ export interface ProcessingSettings {
   maintain_aspect_ratio: boolean;
   crop_preset: CropPreset | null;
   strip_metadata: boolean;
+  convert_to_srgb: boolean;
   crop_offset_x: number;
   crop_offset_y: number;
   crop_scale: number;

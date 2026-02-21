@@ -1,3 +1,4 @@
+use flate2::read::ZlibDecoder;
 use image::{imageops::FilterType, DynamicImage, GenericImageView, ImageFormat};
 use std::collections::HashSet;
 use std::fs;
@@ -194,6 +195,204 @@ fn inject_app1_into_jpeg(jpeg_bytes: &[u8], app1: &[u8]) -> Vec<u8> {
     result
 }
 
+// ─── sRGB Color Profile Conversion ─────────────────────────────────────────
+
+/// Extract raw ICC profile bytes from a JPEG file (APP2 segments).
+/// JPEG ICC profiles may be split across multiple APP2 markers — reassembles them in order.
+fn read_jpeg_icc_profile(path: &str) -> Option<Vec<u8>> {
+    let mut file = fs::File::open(path).ok()?;
+    let mut data = Vec::new();
+    file.read_to_end(&mut data).ok()?;
+
+    // JPEG must start with SOI (FF D8)
+    if data.len() < 4 || data[0] != 0xFF || data[1] != 0xD8 {
+        return None;
+    }
+
+    const ICC_SIG: &[u8] = b"ICC_PROFILE\0";
+    let mut chunks: std::collections::BTreeMap<u8, Vec<u8>> = std::collections::BTreeMap::new();
+    let mut total_chunks: u8 = 0;
+
+    let mut pos = 2; // skip SOI marker
+    while pos + 3 < data.len() {
+        if data[pos] != 0xFF {
+            break;
+        }
+        let marker = data[pos + 1];
+
+        // Standalone markers have no length field (SOI, EOI, RST0–RST7)
+        if marker == 0xD8 || marker == 0xD9 || (0xD0..=0xD7).contains(&marker) {
+            pos += 2;
+            continue;
+        }
+
+        if pos + 4 > data.len() {
+            break;
+        }
+
+        let seg_len = ((data[pos + 2] as usize) << 8) | (data[pos + 3] as usize);
+        if seg_len < 2 {
+            break; // malformed segment — prevent infinite loop
+        }
+
+        // APP2 with enough room for ICC_PROFILE\0 + chunk# + total# (14 bytes)
+        if marker == 0xE2 && seg_len >= 16 {
+            let payload = pos + 4;
+            if payload + 14 <= data.len() && &data[payload..payload + 12] == ICC_SIG {
+                let chunk_num = data[payload + 12]; // 1-based
+                let chunk_total = data[payload + 13];
+                let icc_start = payload + 14;
+                let icc_end = (pos + 2 + seg_len).min(data.len());
+                if chunk_num >= 1 && icc_start < icc_end {
+                    chunks.insert(chunk_num, data[icc_start..icc_end].to_vec());
+                    if total_chunks == 0 {
+                        total_chunks = chunk_total;
+                    }
+                }
+            }
+        }
+
+        // SOS starts compressed image data — no more headers after this
+        if marker == 0xDA {
+            break;
+        }
+
+        pos += 2 + seg_len;
+    }
+
+    if chunks.is_empty() {
+        return None;
+    }
+
+    let expected = if total_chunks > 0 { total_chunks } else { 1 };
+    let mut profile = Vec::new();
+    for i in 1..=expected {
+        profile.extend_from_slice(chunks.get(&i)?);
+    }
+    Some(profile)
+}
+
+/// Extract and decompress the ICC profile from a PNG file (iCCP chunk).
+fn read_png_icc_profile(path: &str) -> Option<Vec<u8>> {
+    let mut file = fs::File::open(path).ok()?;
+    let mut data = Vec::new();
+    file.read_to_end(&mut data).ok()?;
+
+    // PNG signature: 8 bytes
+    if data.len() < 8 || &data[0..8] != b"\x89PNG\r\n\x1a\n" {
+        return None;
+    }
+
+    let mut pos = 8;
+    while pos + 12 <= data.len() {
+        let chunk_len =
+            u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+        let chunk_type = &data[pos + 4..pos + 8];
+        let chunk_data_start = pos + 8;
+        let chunk_data_end = chunk_data_start + chunk_len;
+
+        if chunk_data_end + 4 > data.len() {
+            break;
+        }
+
+        if chunk_type == b"iCCP" {
+            let chunk_data = &data[chunk_data_start..chunk_data_end];
+
+            // Profile name is null-terminated; compression method follows the null byte
+            let null_pos = chunk_data.iter().position(|&b| b == 0)?;
+            if null_pos + 2 >= chunk_data.len() {
+                return None;
+            }
+            // chunk_data[null_pos + 1] = compression method (0 = deflate/zlib)
+            let compressed = &chunk_data[null_pos + 2..];
+
+            let mut decoder = ZlibDecoder::new(compressed);
+            let mut icc_bytes = Vec::new();
+            decoder.read_to_end(&mut icc_bytes).ok()?;
+
+            return if icc_bytes.is_empty() { None } else { Some(icc_bytes) };
+        }
+
+        // IEND chunk — stop scanning
+        if chunk_type == b"IEND" {
+            break;
+        }
+
+        pos = chunk_data_end + 4; // skip data + CRC (4 bytes)
+    }
+
+    None
+}
+
+/// Convert image pixels from an arbitrary ICC color profile to sRGB using lcms2.
+/// Preserves the alpha channel unchanged. Returns None on any error (malformed
+/// profile, unsupported color space, etc.) so the caller can fall back gracefully.
+fn apply_srgb_conversion(img: &DynamicImage, icc_bytes: &[u8]) -> Option<DynamicImage> {
+    let src_profile = lcms2::Profile::new_icc(icc_bytes).ok()?;
+    let dst_profile = lcms2::Profile::new_srgb();
+
+    // [u8; 3] maps 1:1 to RGB_8 (3 bytes per pixel) — avoids any rgb-crate version dependency
+    let transform = lcms2::Transform::<[u8; 3], [u8; 3]>::new(
+        &src_profile,
+        lcms2::PixelFormat::RGB_8,
+        &dst_profile,
+        lcms2::PixelFormat::RGB_8,
+        lcms2::Intent::Perceptual,
+    )
+    .ok()?;
+
+    let rgba = img.to_rgba8();
+    let (w, h) = rgba.dimensions();
+    let raw = rgba.as_raw();
+    let pixel_count = (w * h) as usize;
+
+    // Separate RGB from alpha so we only transform color channels
+    let input_rgb: Vec<[u8; 3]> = raw.chunks_exact(4).map(|c| [c[0], c[1], c[2]]).collect();
+    let alpha: Vec<u8> = raw.chunks_exact(4).map(|c| c[3]).collect();
+
+    let mut output_rgb = vec![[0u8; 3]; pixel_count];
+    transform.transform_pixels(&input_rgb, &mut output_rgb);
+
+    // Reconstruct RGBA with original alpha
+    let mut output_raw: Vec<u8> = Vec::with_capacity(pixel_count * 4);
+    for (px, a) in output_rgb.iter().zip(alpha.iter()) {
+        output_raw.push(px[0]);
+        output_raw.push(px[1]);
+        output_raw.push(px[2]);
+        output_raw.push(*a);
+    }
+
+    image::RgbaImage::from_raw(w, h, output_raw).map(DynamicImage::ImageRgba8)
+}
+
+/// If `convert_to_srgb` is enabled, read the embedded ICC profile and convert pixels.
+/// Silently returns the original image unchanged if no profile is found or on any error.
+fn maybe_convert_to_srgb(
+    img: DynamicImage,
+    input_path: &str,
+    settings: &crate::types::ProcessingSettings,
+) -> DynamicImage {
+    if !settings.convert_to_srgb {
+        return img;
+    }
+
+    let ext = Path::new(input_path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_lowercase());
+
+    let icc_bytes = match ext.as_deref() {
+        Some("jpg") | Some("jpeg") => read_jpeg_icc_profile(input_path),
+        Some("png") => read_png_icc_profile(input_path),
+        _ => None,
+    };
+
+    match icc_bytes {
+        None => img, // No embedded profile — treat as sRGB already, nothing to do
+        Some(icc) => apply_srgb_conversion(&img, &icc).unwrap_or(img),
+    }
+}
+
 // ─── Processing ────────────────────────────────────────────────────────────
 
 /// Process a single image according to the given settings.
@@ -233,6 +432,9 @@ fn process_image_inner(
 ) -> Result<(String, u64), Box<dyn std::error::Error>> {
     // Load the image with correct EXIF orientation
     let img = open_image_oriented(input_path)?;
+
+    // Convert from embedded ICC color profile to sRGB if requested
+    let img = maybe_convert_to_srgb(img, input_path, settings);
 
     // Get original format for "Original" output mode
     let original_format = detect_format(input_path);

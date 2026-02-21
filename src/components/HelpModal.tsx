@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { Icons } from './Icons';
 import { checkForUpdates, UpdateInfo } from '../updater';
 
-const APP_VERSION = '0.1.1';
+const APP_VERSION = '0.2.0';
 
 interface HelpModalProps {
     onClose: () => void;
@@ -23,6 +25,39 @@ const shortcuts: { key: string; description: string }[] = [
 export function HelpModal({ onClose, onUpdateAvailable }: HelpModalProps) {
     const [checking, setChecking] = useState(false);
     const [checkResult, setCheckResult] = useState<'latest' | 'error' | null>(null);
+
+    // Windows Integration state
+    const isWindows = navigator.platform === 'Win32' || navigator.platform.startsWith('Win');
+    const [ctxRegistered, setCtxRegistered] = useState<boolean | null>(null);
+    const [ctxWorking, setCtxWorking] = useState(false);
+    const [ctxMsg, setCtxMsg] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!isWindows) return;
+        invoke<boolean>('is_context_menu_registered')
+            .then(r => setCtxRegistered(r))
+            .catch(() => setCtxRegistered(false));
+    }, [isWindows]);
+
+    const handleToggleContextMenu = async () => {
+        setCtxWorking(true);
+        setCtxMsg(null);
+        try {
+            if (ctxRegistered) {
+                await invoke('unregister_context_menu');
+                setCtxRegistered(false);
+                setCtxMsg('Removed from right-click menu.');
+            } else {
+                await invoke('register_context_menu');
+                setCtxRegistered(true);
+                setCtxMsg('Added! Right-click any image file to try it.');
+            }
+        } catch (err) {
+            setCtxMsg(`Error: ${err}`);
+        } finally {
+            setCtxWorking(false);
+        }
+    };
 
     const handleCheckForUpdates = async () => {
         setChecking(true);
@@ -96,6 +131,40 @@ export function HelpModal({ onClose, onUpdateAvailable }: HelpModalProps) {
                         </p>
                     </div>
 
+                    {isWindows && (
+                        <div className="help-section">
+                            <div className="help-section-title">Windows Integration</div>
+                            <p className="help-text" style={{ marginBottom: '12px' }}>
+                                Add a <strong>"Squeez this image"</strong> option to the right-click
+                                context menu. Instantly compresses any image to WebP using your
+                                default settings — no need to open the app.
+                            </p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                <button
+                                    className="help-update-btn"
+                                    onClick={handleToggleContextMenu}
+                                    disabled={ctxWorking || ctxRegistered === null}
+                                >
+                                    {ctxWorking
+                                        ? 'Working…'
+                                        : ctxRegistered
+                                            ? 'Remove from right-click menu'
+                                            : 'Add to right-click menu'}
+                                </button>
+                                {ctxRegistered !== null && !ctxWorking && !ctxMsg && (
+                                    <span style={{ fontSize: '11px', color: ctxRegistered ? 'var(--accent-success)' : 'var(--text-tertiary)' }}>
+                                        {ctxRegistered ? '● Active' : '○ Not installed'}
+                                    </span>
+                                )}
+                            </div>
+                            {ctxMsg && (
+                                <span className="help-update-status latest" style={{ display: 'block', marginTop: '8px' }}>
+                                    {ctxMsg}
+                                </span>
+                            )}
+                        </div>
+                    )}
+
                     <div className="help-update-section">
                         <button
                             className="help-update-btn"
@@ -110,6 +179,19 @@ export function HelpModal({ onClose, onUpdateAvailable }: HelpModalProps) {
                         {checkResult === 'error' && (
                             <span className="help-update-status">Could not check for updates</span>
                         )}
+                    </div>
+
+                    <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                        Developed by{' '}
+                        <a
+                            href="#"
+                            onClick={e => { e.preventDefault(); openUrl('https://www.indigo.ba'); }}
+                            style={{ color: 'var(--text-tertiary)', textDecoration: 'underline', cursor: 'pointer' }}
+                            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                        >
+                            Indigo
+                        </a>
                     </div>
                 </div>
             </div>

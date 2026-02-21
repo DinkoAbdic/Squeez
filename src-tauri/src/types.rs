@@ -58,6 +58,8 @@ pub struct ProcessingSettings {
     pub crop_preset: Option<CropPreset>,
     pub strip_metadata: bool,
     #[serde(default)]
+    pub convert_to_srgb: bool,
+    #[serde(default)]
     pub crop_offset_x: f64,
     #[serde(default)]
     pub crop_offset_y: f64,
@@ -96,7 +98,8 @@ impl Default for ProcessingSettings {
             resize_height: None,
             maintain_aspect_ratio: true,
             crop_preset: None,
-            strip_metadata: false,
+            strip_metadata: true,
+            convert_to_srgb: true,
             crop_offset_x: 0.0,
             crop_offset_y: 0.0,
             crop_scale: 1.0,
