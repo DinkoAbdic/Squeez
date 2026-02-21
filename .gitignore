@@ -22,6 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.claude
 
 # Rust / Tauri build artifacts
 src-tauri/target/
@@ -31,11 +32,11 @@ src-tauri/gen/
 *.log
 src-tauri/*.txt
 
-# Claude Code session data
-.claude/
-
 # Tauri signing keys
 ~/.tauri/
+
+# Release guide (internal)
+RELEASE_GUIDE.md
 
 # Internal planning documents
 PRD.md
